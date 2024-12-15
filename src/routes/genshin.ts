@@ -5,7 +5,7 @@ import { getTime } from "../utils/getTime.js";
 
 export const handleRoute = async (c: ListContext, noCache: boolean) => {
   const type = c.req.query("type") || "1";
-  const { fromCache, data, updateTime } = await getList({ type }, noCache);
+  const listData = await getList({ type }, noCache);
   const routeData: RouterData = {
     name: "genshin",
     title: "原神",
@@ -21,30 +21,27 @@ export const handleRoute = async (c: ListContext, noCache: boolean) => {
       },
     },
     link: "https://www.miyoushe.com/ys/home/28",
-    total: data?.length || 0,
-    updateTime,
-    fromCache,
-    data,
+    total: listData.data?.length || 0,
+    ...listData,
   };
   return routeData;
 };
 
 const getList = async (options: Options, noCache: boolean) => {
   const { type } = options;
-  const url = `https://bbs-api.miyoushe.com/post/wapi/getNewsList?gids=2&page_size=20&type=${type}`;
+  const url = `https://bbs-api-static.miyoushe.com/painter/wapi/getNewsList?client_type=4&gids=2&last_id=&page_size=20&type=${type}`;
   const result = await get({ url, noCache });
   const list = result.data.data.list;
   return {
-    fromCache: result.fromCache,
-    updateTime: result.updateTime,
+    ...result,
     data: list.map((v: RouterType["miyoushe"]) => {
       const data = v.post;
       return {
         id: data.post_id,
         title: data.subject,
         desc: data.content,
-        cover: data.cover,
-        author: v.user?.nickname || null,
+        cover: data.cover || data?.images?.[0],
+        author: v.user?.nickname || undefined,
         timestamp: getTime(data.created_at),
         hot: data.view_status,
         url: `https://www.miyoushe.com/ys/article/${data.post_id}`,

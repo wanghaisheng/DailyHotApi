@@ -28,7 +28,11 @@ app.use(
   "*",
   cors({
     // 可写为数组
-    origin: config.ALLOWED_DOMAIN,
+    origin: (origin) => {
+      // 是否指定域名
+      const isSame = config.ALLOWED_HOST && origin.endsWith(config.ALLOWED_HOST);
+      return isSame ? origin : config.ALLOWED_DOMAIN;
+    },
     allowMethods: ["POST", "GET", "OPTIONS"],
     allowHeaders: ["X-Custom-Header", "Upgrade-Insecure-Requests"],
     credentials: true,
@@ -55,7 +59,7 @@ app.get("/", (c) => c.html(<Home />));
 app.notFound((c) => c.html(<NotFound />, 404));
 // error
 app.onError((err, c) => {
-  logger.error(`出现致命错误：${err}`);
+  logger.error(`❌ [ERROR] ${err?.message}`);
   return c.html(<Error error={err?.message} />, 500);
 });
 
